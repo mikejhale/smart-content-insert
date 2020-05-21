@@ -48,22 +48,6 @@ class Smart_Content_Insert {
 	 */
 	public function insert_into_paragraphs( $content, $insert_value = '', $insert_after = 1, $strict = true, $delimiter = '' ) {
 
-		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-			return $content;
-		}
-
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-			return $content;
-		}
-
-		if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
-			return $content;
-		}
-
-		if ( strpos( $content, $this->page_break ) ) {
-			return $content;
-		}
-
 		$delimiter    = $delimiter ? $delimiter : "\r\n";
 		$paragraphs   = explode( $delimiter, $content );
 		$index_p      = 0;
