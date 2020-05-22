@@ -95,8 +95,8 @@ class Smart_Content_Insert {
 	 * Get paragraphs from content.
 	 *
 	 * @param string $content   The content being parsed.
-	 * @param string $delimiter The paragraph delimiter.
 	 * @param bool   $strict    If the paragraphs should be filtered.
+	 * @param string $delimiter The paragraph delimiter.
 	 * @return int
 	 */
 	public function get_paragraph_count( $content, $strict = true, $delimiter = null ) {
@@ -134,6 +134,66 @@ class Smart_Content_Insert {
 		}
 
 		return $count;
+	}
+
+	/**
+	 * Insert element into paragraphs from the_content.
+	 *
+	 * @param string $content       The content.
+	 * @param string $insert_value  The value to be inserted into the content.
+	 * @param string $selector      The selector value to match.
+	 * @param string $selector_type Selector to match (id or class) Default: id.
+	 * @param string $selector_tag  The tag to match.
+	 * @param int    $instance      The instance of the match to insert (first, second, etc).
+	 * @param bool   $insert_before Insert before the matching tag. Default: false.
+	 * @return string
+	 */
+	public function insert_at_element( $content, $insert_value, $selector, $selector_type = 'id', $selector_tag = 'div', $instance = 1, $insert_before = false ) {
+
+		// if nothing to insert, just return.
+		if ( ! $insert_value ) {
+			return $content;
+		}
+
+		$dom = new \DOMDocument();
+		@$dom->loadHTML( mb_convert_encoding( $content, 'HTML-ENTITIES', 'UTF-8' ) );
+
+		if ( 'id' === $selector_type ) {
+			// get by ID.
+			$insert_node = $dom->getElementByID( $selector );
+		} else {
+			// get by class.
+			$xpath = new \DomXPath( $dom );
+			$nodes = $xpath->query( 
+				sprintf(
+					'//%s[contains(concat(\' \', normalize-space(@class), \' \'), \' %s \')]',
+					$selector_tag,
+					$selector
+				)
+			);
+
+			// check that we have enough nodes.
+			if ( $nodes->length < $instance ) {
+				return $content;
+			}
+
+			$insert_node = $nodes[ $instance - 1 ];
+		}
+
+		// Create a node from the insert value.
+		$value_dom = new \DOMDocument();
+		@$value_dom->loadHTML( mb_convert_encoding( $insert_value, 'HTML-ENTITIES', 'UTF-8' ) );
+
+		// add to content.
+		$value_node = $dom->importNode( $value_dom->childNodes[1], true );
+
+		if ( $insert_before ) {
+			$insert_node->parentNode->insertBefore( $value_node, $insert_node );
+		} else {
+			$insert_node->parentNode->insertBefore( $value_node, $insert_node->nextSibling );
+		}
+
+		return $dom->saveHTML();
 	}
 }
 
