@@ -48,21 +48,24 @@ class Smart_Content_Insert {
 	 */
 	public function insert_into_paragraphs( $content, $insert_value = '', $insert_after = 1, $strict = true, $delimiter = '' ) {
 
-		$delimiter    = $delimiter ? $delimiter : "\r\n";
+		$delimiter    = $delimiter ? $delimiter : '</p>';
 		$paragraphs   = explode( $delimiter, $content );
 		$index_p      = 0;
 		$insert_after = apply_filters( 'smart_content_insert_after', $insert_after );
 		$ignored      = apply_filters(
-			'smart_content_insert_strict_filters', 
+			'smart_content_insert_strict_filters',
 			array(
 				'/^<img.*?[^\>]+>$/',        // img tags.
 				'/^<strong>.*?<\/strong>$/', // string tags (used sometimes as a header)
 				'/<h[1-6]>.*?<\/h[1-6]>$/',  //	h1 - h6 header tags.
+				'/^<iframe>.*?<\/iframe>$/', // iframes
 			)
 		);
 
 		foreach ( $paragraphs as $p ) {
 
+			//re-add the delimiter.
+			$p .= '</p>';
 			if ( $strict ) {
 				$p    = trim( $p );
 				$is_p = true;
@@ -83,7 +86,7 @@ class Smart_Content_Insert {
 			}
 
 			if ( $insert_after === $index_p ) {
-				$content = substr_replace( $content, $insert_value, strpos( $content, $p ) + strlen( $p ), 0 );
+				$content = substr_replace( $content, "\n\n{$insert_value}\n\n", strpos( $content, $p ) + strlen( $p ), 0 );
 				break;
 			}
 		}
@@ -101,7 +104,7 @@ class Smart_Content_Insert {
 	 */
 	public function get_paragraph_count( $content, $strict = true, $delimiter = null ) {
 		$count        = 0;
-		$delimiter    = $delimiter ? $delimiter : "\r\n";
+		$delimiter    = $delimiter ? $delimiter : '</p>';
 		$paragraphs   = explode( $delimiter, $content );
 
 		foreach ( $paragraphs as $p ) {
@@ -164,7 +167,7 @@ class Smart_Content_Insert {
 		} else {
 			// get by class.
 			$xpath = new \DomXPath( $dom );
-			$nodes = $xpath->query( 
+			$nodes = $xpath->query(
 				sprintf(
 					'//%s[contains(concat(\' \', normalize-space(@class), \' \'), \' %s \')]',
 					$selector_tag,
