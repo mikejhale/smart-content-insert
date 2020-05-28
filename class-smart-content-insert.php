@@ -40,54 +40,49 @@ class Smart_Content_Insert {
 	 * Insert element into paragraphs from the_content.
 	 *
 	 * @param string $content      The content.
-	 * @param string $delimiter    The delimiter to separate the content.
-	 * @param string $insert_value The value to be inserted into the content.
+	 * @param string $insert_value HTML to be inserted.
 	 * @param int    $insert_after The count of paragraphs to insert the tag.
 	 * @param bool   $strict       Ignore blank paragraphs, images, headers, etc.
+	 * @param string $delimiter    The delimiter to separate the content.
 	 * @return string
 	 */
 	public function insert_into_paragraphs( $content, $insert_value = '', $insert_after = 1, $strict = true, $delimiter = '' ) {
 
-		$delimiter    = $delimiter ? $delimiter : '</p>';
-		$paragraphs   = explode( $delimiter, $content );
-		$index_p      = 0;
-		$insert_after = apply_filters( 'smart_content_insert_after', $insert_after );
-		$ignored      = apply_filters(
-			'smart_content_insert_strict_filters',
-			array(
-				'/^<img.*?[^\>]+>$/',        // img tags.
-				'/^<strong>.*?<\/strong>$/', // string tags (used sometimes as a header)
-				'/<h[1-6]>.*?<\/h[1-6]>$/',  //	h1 - h6 header tags.
-				'/^<iframe>.*?<\/iframe>$/', // iframes
-			)
-		);
+		if ( empty( $insert_value ) ) {
+			return $content;
+		}
+
+		$document = new \DOMDocument();
+		@$document->loadHTML( mb_convert_encoding( $content, 'HTML-ENTITIES', 'UTF-8' ) );
+
+		$p_index    = 1;
+		$paragraphs = $document->getElementsByTagName( 'p' );
+		if ( $paragraphs->length < $insert_after ) {
+			return $content;
+		}
 
 		foreach ( $paragraphs as $p ) {
 
-			//re-add the delimiter.
-			$p .= '</p>';
-			if ( $strict ) {
-				$p    = trim( $p );
-				$is_p = true;
-				if ( strlen( $p ) !== 0 && '&nbsp;' !== $p ) {
-					foreach ( $ignored as $pattern ) {
-						if ( preg_match( $pattern, $p ) ) {
-							$is_p = false;
-							continue;
-						}
-					}
-
-					if ( $is_p ) {
-						$index_p++;
-					}
-				}
-			} else {
-				$index_p++;
+			if ( ! $p->hasChildNodes() ) {
+				continue;
 			}
 
-			if ( $insert_after === $index_p ) {
-				$content = substr_replace( $content, "\n\n{$insert_value}\n\n", strpos( $content, $p ) + strlen( $p ), 0 );
-				break;
+			if ( $p->childNodes->length > 1 || ( 1 === $p->childNodes->length && ( 'strong' !== $p->firstChild->nodeName && 'img' !== $p->firstChild->nodeName && "\xC2\xA0" !== $p->firstChild->textContent ) ) ) {
+
+				if ( $p_index === $insert_after ) {
+
+					// Create a node from the insert value.
+					$value_dom = new \DOMDocument();
+					@$value_dom->loadHTML( mb_convert_encoding( $insert_value, 'HTML-ENTITIES', 'UTF-8' ) );
+
+					// add to content.
+					$value_node = $document->importNode( $value_dom->childNodes[1], true );
+					$p->parentNode->insertBefore( $value_node, $p->nextSibling );
+
+					return $document->saveHTML();
+				}
+
+				$p_index++;
 			}
 		}
 
@@ -198,6 +193,17 @@ class Smart_Content_Insert {
 
 		return $dom->saveHTML();
 	}
+
+	/**
+	 * Build a DOMElement.
+	 *
+	 * @param array $args Element args.
+	 * @return \DOMElement
+	 */
+	public function build_element( $args ) {
+
+	}
+
 }
 
 new Smart_Content_Insert();
