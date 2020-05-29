@@ -46,7 +46,7 @@ class Smart_Content_Insert {
 	 * @param string $delimiter    The delimiter to separate the content.
 	 * @return string
 	 */
-	public function insert_into_paragraphs( $content, $insert_value = '', $insert_after = 1, $strict = true, $delimiter = '' ) {
+	public function insert_into_paragraphs( $content, $insert_value = '', $insert_after = 1 ) {
 
 		if ( empty( $insert_value ) ) {
 			return $content;
