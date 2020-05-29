@@ -52,11 +52,12 @@ class Smart_Content_Insert {
 			return $content;
 		}
 
+		$p_index  = 1;
 		$document = new \DOMDocument();
-		@$document->loadHTML( mb_convert_encoding( $content, 'HTML-ENTITIES', 'UTF-8' ) );
+		@$document->loadHTML( mb_convert_encoding( $content, 'HTML-ENTITIES', 'UTF-8' ), LIBXML_HTML_NODEFDTD );
 
-		$p_index    = 1;
-		$paragraphs = $document->getElementsByTagName( 'p' );
+		$xpath      = new \DOMXPath( $document );
+		$paragraphs = $xpath->query( '//body/p' );
 		if ( $paragraphs->length < $insert_after ) {
 			return $content;
 		}
@@ -79,7 +80,12 @@ class Smart_Content_Insert {
 					$value_node = $document->importNode( $value_dom->childNodes[1], true );
 					$p->parentNode->insertBefore( $value_node, $p->nextSibling );
 
-					return $document->saveHTML();
+					// remove elements added by DOMDocument.
+					$content = $document->saveHTML();
+					$content = str_replace( '<html><body>', '', $content );
+					$content = str_replace( '</body></html>', '', $content );
+
+					return $content;
 				}
 
 				$p_index++;
