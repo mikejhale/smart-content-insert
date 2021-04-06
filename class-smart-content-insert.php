@@ -64,7 +64,7 @@ class Smart_Content_Insert {
 
 		foreach ( $paragraphs as $p ) {
 
-			if ( ! $p->hasChildNodes() ) {
+			if ( ! $p->hasChildNodes() || count( $paragraphs ) === $insert_after ) {
 				continue;
 			}
 
